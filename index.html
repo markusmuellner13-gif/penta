@@ -1,0 +1,55 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="dark">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover" />
+  <meta name="theme-color" content="#121213" />
+  <meta name="description" content="PENTA — a daily word game. Five letters. Six tries. Guess the hidden word." />
+  <title>PENTA — Five letters. Six tries.</title>
+  <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><rect width='100' height='100' rx='18' fill='%236aaa64'/><text x='50' y='72' font-size='64' font-family='Arial' font-weight='bold' text-anchor='middle' fill='white'>P</text></svg>" />
+  <link rel="stylesheet" href="styles.css" />
+</head>
+<body>
+  <div id="app">
+    <header class="header">
+      <button class="icon-btn" id="help-btn" aria-label="How to play" title="How to play">
+        <svg viewBox="0 0 24 24" width="22" height="22"><path fill="currentColor" d="M12 2a10 10 0 1 0 0 20 10 10 0 0 0 0-20Zm0 16.5a1.2 1.2 0 1 1 0-2.4 1.2 1.2 0 0 1 0 2.4Zm1.6-6c-.7.5-.9.8-.9 1.4v.4h-1.5v-.5c0-1.2.5-1.8 1.3-2.4.6-.5.9-.8.9-1.4 0-.7-.6-1.2-1.4-1.2-.7 0-1.3.4-1.5 1.2l-1.4-.5C9 8.1 10.2 7.3 11.6 7.3c1.7 0 2.9 1 2.9 2.5 0 1-.4 1.6-1 2.1Z"/></svg>
+      </button>
+      <div class="title-wrap">
+        <h1 class="title">PENTA</h1>
+        <span class="subtitle" id="mode-label">Daily</span>
+      </div>
+      <div class="header-right">
+        <button class="icon-btn" id="practice-btn" aria-label="Practice mode" title="Practice (unlimited)">
+          <svg viewBox="0 0 24 24" width="22" height="22"><path fill="currentColor" d="M12 6V3L8 7l4 4V8a4 4 0 1 1-4 4H6a6 6 0 1 0 6-6Z"/></svg>
+        </button>
+        <button class="icon-btn" id="stats-btn" aria-label="Statistics" title="Statistics">
+          <svg viewBox="0 0 24 24" width="22" height="22"><path fill="currentColor" d="M3 13h4v8H3v-8Zm7-9h4v17h-4V4Zm7 5h4v12h-4V9Z"/></svg>
+        </button>
+        <button class="icon-btn" id="theme-btn" aria-label="Toggle theme" title="Toggle theme">
+          <svg viewBox="0 0 24 24" width="22" height="22"><path fill="currentColor" d="M12 18a6 6 0 1 1 0-12 6 6 0 0 1 0 12Zm0-16h-1v3h2V2h-1Zm0 17h-1v3h2v-3h-1ZM2 11v2h3v-2H2Zm17 0v2h3v-2h-3ZM4.2 4.2 3 5.4l2.1 2.1 1.2-1.2L4.2 4.2Zm13.5 13.5-1.2 1.2 2.1 2.1 1.2-1.2-2.1-2.1ZM5.4 21 4.2 19.8l-2.1 2.1L3.3 23 5.4 21Zm13.4-13.4 1.2-1.2L17.9 4.3 16.7 5.5l2.1 2.1Z"/></svg>
+        </button>
+      </div>
+    </header>
+
+    <main class="game" id="game">
+      <div class="board-wrap">
+        <div class="board" id="board" aria-label="Game board"></div>
+      </div>
+      <div class="keyboard" id="keyboard" aria-label="Keyboard"></div>
+    </main>
+
+    <div class="toast-wrap" id="toast-wrap" aria-live="polite"></div>
+  </div>
+
+  <!-- Modal shell -->
+  <div class="modal-overlay" id="modal-overlay" hidden>
+    <div class="modal" id="modal" role="dialog" aria-modal="true">
+      <button class="modal-close" id="modal-close" aria-label="Close">&times;</button>
+      <div class="modal-content" id="modal-content"></div>
+    </div>
+  </div>
+
+  <script type="module" src="game.js"></script>
+</body>
+</html>

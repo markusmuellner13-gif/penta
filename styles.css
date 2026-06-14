@@ -58,6 +58,23 @@ body {
   touch-action: manipulation;
 }
 
+/* Fitting, subtle backdrop — soft glows in the PENTA green/yellow palette,
+   plus a faint dot grid evoking the tile board. Stays behind everything. */
+html[data-theme="dark"] body {
+  background:
+    radial-gradient(1100px 620px at 50% -12%, rgba(106,170,100,0.16), transparent 62%),
+    radial-gradient(900px 560px at 108% 112%, rgba(120,140,210,0.12), transparent 60%),
+    radial-gradient(circle, rgba(255,255,255,0.05) 1px, transparent 1.4px) 0 0 / 26px 26px,
+    #121213;
+}
+html[data-theme="light"] body {
+  background:
+    radial-gradient(1000px 560px at 50% -12%, rgba(106,170,100,0.20), transparent 62%),
+    radial-gradient(820px 520px at 108% 112%, rgba(201,180,88,0.20), transparent 60%),
+    radial-gradient(circle, rgba(0,0,0,0.04) 1px, transparent 1.4px) 0 0 / 26px 26px,
+    #fbfbfa;
+}
+
 #app {
   height: 100dvh;
   height: 100vh;
@@ -98,6 +115,7 @@ body {
 }
 .icon-btn:hover { background: var(--border); }
 .icon-btn:active { transform: scale(0.92); }
+.lang-btn .lang-flag { font-size: 20px; line-height: 1; }
 
 /* ---------- Game ---------- */
 .game {
@@ -249,6 +267,9 @@ body {
   animation: fadein 150ms ease;
   padding: 16px;
 }
+/* The class sets display:grid, which would override the [hidden] UA rule —
+   this restores hiding so closing the modal (the X) actually works. */
+.modal-overlay[hidden] { display: none; }
 @keyframes fadein { from { opacity: 0; } }
 .modal {
   background: var(--modal-bg);

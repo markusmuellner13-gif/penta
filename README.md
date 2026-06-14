@@ -9,7 +9,10 @@ attempts; after each guess the tiles tell you how close you were.
 
 - **Daily puzzle** — everyone gets the same word each day, with a countdown to the next one.
 - **Practice mode** — unlimited random rounds (tap the ↻ icon). Practice never touches your stats.
+- **Three languages** — 🇬🇧 English, 🇩🇪 Deutsch, 🇮🇹 Italiano. Tap the flag to switch;
+  each language keeps its own daily puzzle, saved game, and statistics.
 - **Faithful Wordle rules**, including the correct **two-pass duplicate-letter** coloring.
+- **Installable PWA** with a real app icon (manifest + maskable icons).
 - **Hard mode** — every revealed hint must be reused in later guesses.
 - **Statistics** — games played, win %, current/max streak, and a guess-distribution chart, saved locally.
 - **Share** your result as an emoji grid (Web Share on mobile, clipboard on desktop).
@@ -20,9 +23,9 @@ attempts; after each guess the tiles tell you how close you were.
 
 ## Tech
 
-Zero-dependency, no build step — plain HTML/CSS/ES-module JavaScript. The word list (2,500 common
-answers + 5,757 accepted guesses) comes from the **Stanford GraphBase** five-letter word set
-(public domain) and is baked into `words.js`.
+Zero-dependency, no build step — plain HTML/CSS/ES-module JavaScript. Word data is baked into
+`words.js`: English (2,500 answers / 5,757 guesses) from the **Stanford GraphBase** set
+(public domain); German and Italian (1,500 answers each) from **hermitdave/FrequencyWords**.
 
 ## Run locally
 

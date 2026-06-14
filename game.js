@@ -1,4 +1,4 @@
-import { ANSWERS, VALID_SET } from "./words.js";
+import { LANGUAGES, LANG_ORDER } from "./words.js";
 
 /* ============================================================
    PENTA — a Wordle-like daily word game.
@@ -40,11 +40,13 @@ const defaultStats = () => ({
 /* ============================================================
    Game state
    ============================================================ */
-const settings = store.get("penta-settings", { theme: "dark", hardMode: false });
+const settings = store.get("penta-settings", { theme: "dark", hardMode: false, lang: "en" });
+if (!settings.lang || !LANGUAGES[settings.lang]) settings.lang = "en";
 document.documentElement.dataset.theme = settings.theme;
 
 const state = {
   mode: "daily",          // "daily" | "practice"
+  lang: settings.lang,    // "en" | "de" | "it"
   answer: "",
   dayNumber: todayDayNumber(),
   guesses: [],            // array of guessed words
@@ -55,6 +57,9 @@ const state = {
   busy: false,            // locked during reveal animation
   hardMode: settings.hardMode,
 };
+
+// Current language pack: { name, flag, answers[], valid:Set }.
+const curLang = () => LANGUAGES[state.lang];
 
 const keyState = {}; // letter -> best status
 
@@ -256,7 +261,7 @@ async function submitGuess() {
   const r = state.guesses.length;
 
   if (guess.length < COLS) { shakeRow(r); toast("Not enough letters"); return; }
-  if (!VALID_SET.has(guess) && guess !== state.answer) { shakeRow(r); toast("Not in word list"); return; }
+  if (!curLang().valid.has(guess) && guess !== state.answer) { shakeRow(r); toast("Not in word list"); return; }
   if (state.hardMode) {
     const v = hardModeViolation(guess);
     if (v) { shakeRow(r); toast(v); return; }
@@ -316,8 +321,10 @@ function onGameEnd(won) {
   setTimeout(() => showStatsModal(), won ? 1700 : 1700);
 }
 
+function statsKey() { return `penta-stats-${state.lang}`; }
+
 function recordStats(won, tries) {
-  const stats = store.get("penta-stats", defaultStats());
+  const stats = store.get(statsKey(), defaultStats());
   if (stats.lastDay === state.dayNumber) return; // already recorded today
   stats.played++;
   if (won) {
@@ -330,13 +337,13 @@ function recordStats(won, tries) {
     stats.currentStreak = 0;
   }
   stats.lastDay = state.dayNumber;
-  store.set("penta-stats", stats);
+  store.set(statsKey(), stats);
 }
 
 /* ============================================================
    Persistence of in-progress daily game
    ============================================================ */
-function dailyKey() { return `penta-daily-${state.dayNumber}`; }
+function dailyKey() { return `penta-daily-${state.lang}-${state.dayNumber}`; }
 
 function persistGame() {
   if (state.mode !== "daily") return;
@@ -347,10 +354,14 @@ function persistGame() {
 }
 
 function cleanupOldDailies() {
+  // Drop saved games from previous days, but keep every language's game for today.
+  const suffix = `-${state.dayNumber}`;
+  const stale = [];
   for (let i = 0; i < localStorage.length; i++) {
     const k = localStorage.key(i);
-    if (k && k.startsWith("penta-daily-") && k !== dailyKey()) store.del(k);
+    if (k && k.startsWith("penta-daily-") && !k.endsWith(suffix)) stale.push(k);
   }
+  stale.forEach(store.del);
 }
 
 /* ============================================================
@@ -365,7 +376,8 @@ function resetBoardUI() {
 function startDaily() {
   state.mode = "daily";
   state.dayNumber = todayDayNumber();
-  state.answer = ANSWERS[state.dayNumber % ANSWERS.length];
+  const answers = curLang().answers;
+  state.answer = answers[state.dayNumber % answers.length];
   $("#mode-label").textContent = `Daily · #${state.dayNumber + 1}`;
   resetBoardUI();
   cleanupOldDailies();
@@ -386,7 +398,8 @@ function startDaily() {
 
 function startPractice() {
   state.mode = "practice";
-  state.answer = ANSWERS[Math.floor(Math.random() * ANSWERS.length)];
+  const answers = curLang().answers;
+  state.answer = answers[Math.floor(Math.random() * answers.length)];
   $("#mode-label").textContent = "Practice";
   state.guesses = []; state.evals = []; state.current = ""; state.over = false; state.won = false;
   resetBoardUI();
@@ -427,12 +440,14 @@ function showHelpModal() {
     <p><b>U</b> is not in the word in any spot.</p>
     <hr class="divider" />
     <p>A new <b>Daily</b> puzzle appears every day — everyone gets the same word.
-       Tap the <b>↻</b> icon any time for unlimited <b>Practice</b> rounds.</p>
+       Tap <b>↻</b> any time for unlimited <b>Practice</b> rounds, and the
+       <b>flag</b> to switch between 🇬🇧 English, 🇩🇪 Deutsch and 🇮🇹 Italiano —
+       each language keeps its own daily puzzle and stats.</p>
   `);
 }
 
 function showStatsModal() {
-  const stats = store.get("penta-stats", defaultStats());
+  const stats = store.get(statsKey(), defaultStats());
   const winPct = stats.played ? Math.round((stats.wins / stats.played) * 100) : 0;
   const maxDist = Math.max(1, ...stats.dist);
   const lastTries = state.won ? state.guesses.length : -1;
@@ -493,7 +508,7 @@ function showSettingsModal() {
     </div>
     <hr class="divider" />
     <p style="color:var(--muted);font-size:12px;">PENTA · a daily word game. Five letters, six tries.
-       Made with care. Word list: Stanford GraphBase (public domain).</p>
+       Made with care. Words: Stanford GraphBase (EN, public domain) · FrequencyWords (DE, IT).</p>
   `);
 
   $("#hard-toggle").addEventListener("change", (e) => {
@@ -517,7 +532,8 @@ function showSettingsModal() {
 
 /* ---------- Share ---------- */
 function buildShareText() {
-  const head = state.mode === "daily" ? `PENTA #${state.dayNumber + 1}` : "PENTA Practice";
+  const tag = state.mode === "daily" ? `#${state.dayNumber + 1}` : "Practice";
+  const head = `PENTA ${curLang().flag} ${tag}`;
   const score = state.won ? state.guesses.length : "X";
   const hard = state.hardMode ? "*" : "";
   const emoji = { correct: "🟩", present: "🟨", absent: "⬛" };
@@ -580,6 +596,27 @@ $("#practice-btn").addEventListener("click", () => startPractice());
 // Click the PENTA title to return to today's Daily puzzle.
 $(".title-wrap").addEventListener("click", () => { if (state.mode !== "daily") startDaily(); });
 $(".title-wrap").style.cursor = "pointer";
+
+/* ---------- Language toggle ---------- */
+function updateLangBtn() {
+  const btn = $("#lang-btn");
+  if (btn) { btn.querySelector(".lang-flag").textContent = curLang().flag; btn.title = `Language: ${curLang().name}`; }
+}
+function setLang(code) {
+  if (!LANGUAGES[code] || code === state.lang) return;
+  state.lang = code;
+  settings.lang = code;
+  store.set("penta-settings", settings);
+  updateLangBtn();
+  if (state.mode === "practice") startPractice(); else startDaily();
+  toast(curLang().name);
+}
+function cycleLang() {
+  const i = LANG_ORDER.indexOf(state.lang);
+  setLang(LANG_ORDER[(i + 1) % LANG_ORDER.length]);
+}
+$("#lang-btn").addEventListener("click", cycleLang);
+updateLangBtn();
 
 window.addEventListener("resize", fitToScreen);
 window.addEventListener("orientationchange", () => setTimeout(fitToScreen, 200));

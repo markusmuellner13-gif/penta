@@ -8,6 +8,13 @@
   --yellow: #c9b458;
   --radius: 6px;
   --anim: 120ms;
+
+  /* Device safe-area insets (notches, home indicators, rounded corners).
+     Fallback to 0 on devices/browsers without them. */
+  --safe-top: env(safe-area-inset-top, 0px);
+  --safe-bottom: env(safe-area-inset-bottom, 0px);
+  --safe-left: env(safe-area-inset-left, 0px);
+  --safe-right: env(safe-area-inset-right, 0px);
 }
 
 html[data-theme="dark"] {
@@ -76,12 +83,15 @@ html[data-theme="light"] body {
 }
 
 #app {
-  height: 100dvh;
-  height: 100vh;
+  height: 100vh;        /* fallback for older browsers */
+  height: 100dvh;       /* dynamic viewport — wins where supported, tracks mobile chrome */
   display: flex;
   flex-direction: column;
   max-width: 600px;
   margin: 0 auto;
+  /* Keep the UI clear of rounded corners / notches on the sides. */
+  padding-left: var(--safe-left);
+  padding-right: var(--safe-right);
 }
 
 /* ---------- Header ---------- */
@@ -90,7 +100,9 @@ html[data-theme="light"] body {
   align-items: center;
   justify-content: space-between;
   padding: 0 12px;
-  height: 54px;
+  /* Push the header below the status bar / notch so the top stays tappable. */
+  padding-top: var(--safe-top);
+  height: calc(54px + var(--safe-top));
   flex: 0 0 auto;
   border-bottom: 1px solid var(--header-border);
 }
@@ -234,7 +246,7 @@ html[data-theme="light"] body {
 /* ---------- Toast ---------- */
 .toast-wrap {
   position: fixed;
-  top: 70px;
+  top: calc(70px + var(--safe-top));
   left: 50%;
   transform: translateX(-50%);
   display: flex;
@@ -355,4 +367,111 @@ html[data-theme="light"] body {
 @media (max-width: 360px) {
   .key { font-size: 11px; }
   .title { letter-spacing: 2px; }
+}
+
+/* ---------- Opening loading screen ---------- */
+.splash {
+  position: fixed;
+  inset: 0;
+  z-index: 200;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 26px;
+  padding: var(--safe-top) var(--safe-right) var(--safe-bottom) var(--safe-left);
+  background:
+    radial-gradient(760px 480px at 50% 32%, rgba(106,170,100,0.18), transparent 60%),
+    var(--bg);
+  transition: opacity 420ms ease;
+}
+.splash.hide { opacity: 0; pointer-events: none; }
+
+.splash-tiles { display: flex; gap: 8px; }
+.splash-tile {
+  width: clamp(44px, 14vw, 58px);
+  height: clamp(44px, 14vw, 58px);
+  display: grid;
+  place-items: center;
+  border-radius: var(--radius);
+  border: 2px solid var(--tile-filled-border);
+  color: var(--fg);
+  font-weight: 800;
+  font-size: clamp(22px, 7vw, 30px);
+  text-transform: uppercase;
+  opacity: 0;
+  transform: rotateX(-90deg);
+  transform-origin: center;
+  animation: splash-flip 520ms ease forwards;
+}
+/* Stagger the flip-in and land on the brand green/yellow pattern. */
+.splash-tile:nth-child(1) { animation-delay: 80ms;  }
+.splash-tile:nth-child(2) { animation-delay: 200ms; }
+.splash-tile:nth-child(3) { animation-delay: 320ms; }
+.splash-tile:nth-child(4) { animation-delay: 440ms; }
+.splash-tile:nth-child(5) { animation-delay: 560ms; }
+.splash-tile:nth-child(1),
+.splash-tile:nth-child(3),
+.splash-tile:nth-child(4) {
+  --splash-fill: var(--green);
+}
+.splash-tile:nth-child(2),
+.splash-tile:nth-child(5) {
+  --splash-fill: var(--yellow);
+}
+@keyframes splash-flip {
+  0%   { opacity: 0; transform: rotateX(-90deg) scale(0.9); }
+  55%  { opacity: 1; }
+  100% {
+    opacity: 1;
+    transform: rotateX(0) scale(1);
+    background: var(--splash-fill);
+    border-color: var(--splash-fill);
+    color: #fff;
+  }
+}
+
+.splash-tag {
+  color: var(--muted);
+  font-size: 13px;
+  letter-spacing: 3px;
+  text-transform: uppercase;
+  opacity: 0;
+  animation: splash-fade 500ms ease 640ms forwards;
+}
+@keyframes splash-fade { to { opacity: 1; } }
+
+.splash-bar {
+  width: clamp(150px, 56vw, 220px);
+  height: 4px;
+  border-radius: 4px;
+  overflow: hidden;
+  background: var(--border);
+  opacity: 0;
+  animation: splash-fade 500ms ease 640ms forwards;
+}
+.splash-bar span {
+  display: block;
+  height: 100%;
+  width: 40%;
+  border-radius: 4px;
+  background: linear-gradient(90deg, var(--green), var(--yellow));
+  animation: splash-slide 1100ms ease-in-out 700ms infinite;
+}
+@keyframes splash-slide {
+  0%   { transform: translateX(-120%); }
+  100% { transform: translateX(320%); }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .splash-tile {
+    opacity: 1;
+    transform: none;
+    animation: none;
+    background: var(--splash-fill);
+    border-color: var(--splash-fill);
+    color: #fff;
+  }
+  .splash-tag, .splash-bar { opacity: 1; animation: none; }
+  .splash-bar span { animation: none; width: 100%; }
 }

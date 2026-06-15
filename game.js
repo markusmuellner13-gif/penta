@@ -132,16 +132,30 @@ function makeKey(key, label, wide) {
    Computes the largest tile that fits BOTH the available width
    and the available height (after header + keyboard), on any device.
    ============================================================ */
+// Read a CSS env() safe-area inset (px) that CSS resolved for us.
+function readInset(name) {
+  const v = getComputedStyle(document.documentElement).getPropertyValue(name);
+  const n = parseFloat(v);
+  return Number.isFinite(n) ? n : 0;
+}
+
 function fitToScreen() {
   const vh = (window.visualViewport && window.visualViewport.height) || window.innerHeight;
   const vw = (window.visualViewport && window.visualViewport.width) || window.innerWidth;
-  const appW = Math.min(vw, 600);
 
-  const headerH = 54;
+  const safeLeft = readInset("--safe-left");
+  const safeRight = readInset("--safe-right");
+  const safeBottom = readInset("--safe-bottom");
+  const appW = Math.min(vw - safeLeft - safeRight, 600);
+
+  // Measure the real header (it grows by the safe-area-inset-top on notched phones).
+  const headerEl = document.querySelector(".header");
+  const headerH = headerEl ? headerEl.getBoundingClientRect().height : 54;
+
   // Keyboard height scales with viewport but stays tappable.
   const keyH = Math.max(42, Math.min(58, Math.round(vh * 0.075)));
   document.documentElement.style.setProperty("--key-h", keyH + "px");
-  const keyboardH = keyH * 3 + 6 * 2 + 12 + 16; // 3 rows + gaps + padding
+  const keyboardH = keyH * 3 + 6 * 2 + 12 + 16 + safeBottom; // 3 rows + gaps + padding + home indicator
 
   const gap = 5;
   // Available space for the 6x5 board.
@@ -151,7 +165,7 @@ function fitToScreen() {
   const sizeByH = (availH - gap * (ROWS - 1)) / ROWS;
   const sizeByW = (availW - gap * (COLS - 1)) / COLS;
   let tile = Math.floor(Math.min(sizeByH, sizeByW));
-  tile = Math.max(28, Math.min(tile, 64)); // sane bounds
+  tile = Math.max(24, Math.min(tile, 64)); // sane bounds — never below a legible/tappable size
 
   document.documentElement.style.setProperty("--tile-size", tile + "px");
   document.documentElement.style.setProperty("--gap", gap + "px");
@@ -622,14 +636,28 @@ window.addEventListener("resize", fitToScreen);
 window.addEventListener("orientationchange", () => setTimeout(fitToScreen, 200));
 if (window.visualViewport) window.visualViewport.addEventListener("resize", fitToScreen);
 
+/* ---------- splash ---------- */
+function dismissSplash() {
+  const splash = document.getElementById("splash");
+  if (!splash) return;
+  // Let the tile flip-in animation read before fading out.
+  setTimeout(() => {
+    splash.classList.add("hide");
+    splash.addEventListener("transitionend", () => splash.remove(), { once: true });
+    // Safety net in case transitionend doesn't fire.
+    setTimeout(() => splash.remove(), 700);
+  }, 1500);
+}
+
 /* ---------- boot ---------- */
 buildBoard();
 buildKeyboard();
 fitToScreen();
 startDaily();
+dismissSplash();
 
-// First-time visitors get the how-to.
+// First-time visitors get the how-to (after the splash clears).
 if (!store.get("penta-seen", false)) {
   store.set("penta-seen", true);
-  setTimeout(showHelpModal, 300);
+  setTimeout(showHelpModal, 2300);
 }
